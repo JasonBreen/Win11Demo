@@ -1,0 +1,19 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build intro.exe",
+      "type": "shell",
+      "command": "build.bat",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run intro.exe",
+      "type": "shell",
+      "command": "intro.exe",
+      "group": "test",
+      "dependsOn": ["Build intro.exe"]
+    }
+  ]
+}

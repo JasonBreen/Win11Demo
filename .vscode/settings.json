@@ -1,0 +1,6 @@
+{
+  "files.associations": {
+    "*.frag": "glsl"
+  },
+  "C_Cpp.default.configurationProvider": "ms-vscode.cpptools"
+}
