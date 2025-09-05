@@ -5,6 +5,7 @@
 #include <sstream>
 #include <string>
 #include <chrono>
+#include <cstring>
 
 // Globals
 HWND hwnd;
@@ -12,8 +13,7 @@ HGLRC hglrc;
 HDC hdc;
 bool running = true, fullscreen = false, reloadShader = false;
 POINT mousePos = {0};
-RECT windowRect = {0};
-GLuint prog = 0, frag = 0;
+GLuint prog = 0;
 float iTime = 0.0f;
 int winW = 1280, winH = 720;
 float iMouse[4] = {0};
@@ -22,6 +22,8 @@ GLint iTimeLoc = -1, iResolutionLoc = -1, iMouseLoc = -1;
 
 std::string LoadFile(const char* path) {
     std::ifstream f(path);
+    if (!f.is_open())
+        return "";
     std::stringstream ss;
     ss << f.rdbuf();
     return ss.str();
@@ -108,9 +110,12 @@ void InitGL() {
 void Render() {
     if (!prog) return;
     glUseProgram(prog);
-    glUniform1f(iTimeLoc, iTime);
-    glUniform2f(iResolutionLoc, (float)winW, (float)winH);
-    glUniform4f(iMouseLoc, iMouse[0], iMouse[1], iMouse[2], iMouse[3]);
+    if (iTimeLoc != -1)
+        glUniform1f(iTimeLoc, iTime);
+    if (iResolutionLoc != -1)
+        glUniform2f(iResolutionLoc, (float)winW, (float)winH);
+    if (iMouseLoc != -1)
+        glUniform4f(iMouseLoc, iMouse[0], iMouse[1], iMouse[2], iMouse[3]);
     glBegin(GL_QUADS);
     glVertex2f(-1, -1); glVertex2f(1, -1); glVertex2f(1, 1); glVertex2f(-1, 1);
     glEnd();
