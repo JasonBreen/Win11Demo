@@ -17,6 +17,8 @@ GLuint prog = 0, frag = 0;
 float iTime = 0.0f;
 int winW = 1280, winH = 720;
 float iMouse[4] = {0};
+// Cache uniform locations to avoid repeated lookups every frame
+GLint iTimeLoc = -1, iResolutionLoc = -1, iMouseLoc = -1;
 
 std::string LoadFile(const char* path) {
     std::ifstream f(path);
@@ -44,13 +46,29 @@ GLuint CompileFragShader(const char* src) {
 void ReloadShader() {
     std::string src = LoadFile("shader.frag");
     GLuint newFrag = CompileFragShader(src.c_str());
-    if (newFrag) {
-        if (prog) glDeleteProgram(prog);
-        prog = glCreateProgram();
-        glAttachShader(prog, newFrag);
-        glLinkProgram(prog);
-        glDeleteShader(newFrag);
+    if (!newFrag) return;
+
+    GLuint newProg = glCreateProgram();
+    glAttachShader(newProg, newFrag);
+    glLinkProgram(newProg);
+    glDeleteShader(newFrag);
+
+    GLint linked = GL_FALSE;
+    glGetProgramiv(newProg, GL_LINK_STATUS, &linked);
+    if (!linked) {
+        char log[1024];
+        glGetProgramInfoLog(newProg, 1024, nullptr, log);
+        MessageBoxA(hwnd, log, "Link Error", MB_OK);
+        glDeleteProgram(newProg);
+        return;
     }
+
+    // Replace old program and cache uniform locations
+    if (prog) glDeleteProgram(prog);
+    prog = newProg;
+    iTimeLoc = glGetUniformLocation(prog, "iTime");
+    iResolutionLoc = glGetUniformLocation(prog, "iResolution");
+    iMouseLoc = glGetUniformLocation(prog, "iMouse");
 }
 
 LRESULT CALLBACK WndProc(HWND h, UINT m, WPARAM w, LPARAM l) {
@@ -88,10 +106,11 @@ void InitGL() {
 }
 
 void Render() {
+    if (!prog) return;
     glUseProgram(prog);
-    glUniform1f(glGetUniformLocation(prog, "iTime"), iTime);
-    glUniform2f(glGetUniformLocation(prog, "iResolution"), (float)winW, (float)winH);
-    glUniform4f(glGetUniformLocation(prog, "iMouse"), iMouse[0], iMouse[1], iMouse[2], iMouse[3]);
+    glUniform1f(iTimeLoc, iTime);
+    glUniform2f(iResolutionLoc, (float)winW, (float)winH);
+    glUniform4f(iMouseLoc, iMouse[0], iMouse[1], iMouse[2], iMouse[3]);
     glBegin(GL_QUADS);
     glVertex2f(-1, -1); glVertex2f(1, -1); glVertex2f(1, 1); glVertex2f(-1, 1);
     glEnd();
